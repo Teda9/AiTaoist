@@ -38,10 +38,12 @@ type ModelOption = {
 
 type StreamingState = Record<Tab, string>;
 
-const PREFERRED_DEFAULT_MODEL = 'gpt-5.2';
+const PREFERRED_DEFAULT_MODEL = 'gpt-5.4';
+const MODEL_FALLBACK_PRIORITY = ['gpt-5.4', 'gpt-5.2'];
 const HTML_RESPONSE_PATTERN = /<!doctype html|<html[\s>]|<head[\s>]|<body[\s>]/i;
 
 const FALLBACK_MODEL_OPTIONS: ModelOption[] = [
+  { id: 'gpt-5.4', label: 'gpt-5.4' },
   { id: 'gpt-5.2', label: 'gpt-5.2' },
   { id: 'gpt-5.2-codex', label: 'gpt-5.2-codex' },
   { id: 'gpt-5', label: 'gpt-5' },
@@ -85,6 +87,14 @@ function extractKeyErrorMessage(rawPayload: string | null | undefined, fallback:
   }
 
   return normalized.length > 180 ? `${normalized.slice(0, 180)}...` : normalized;
+}
+
+function pickPreferredModel(options: ModelOption[]): string {
+  return (
+    MODEL_FALLBACK_PRIORITY.find((modelId) => options.some((option) => option.id === modelId)) ||
+    options[0]?.id ||
+    PREFERRED_DEFAULT_MODEL
+  );
 }
 
 export default function App() {
@@ -157,9 +167,7 @@ export default function App() {
           ? FALLBACK_MODEL_OPTIONS
           : [{ id: fallbackModel, label: fallbackModel }, ...FALLBACK_MODEL_OPTIONS];
         const nextOptions = remoteOptions.length > 0 ? remoteOptions : fallbackOptions;
-        const nextSelectedModel = nextOptions.some((option) => option.id === PREFERRED_DEFAULT_MODEL)
-          ? PREFERRED_DEFAULT_MODEL
-          : nextOptions[0]?.id || PREFERRED_DEFAULT_MODEL;
+        const nextSelectedModel = pickPreferredModel(nextOptions);
 
         if (!cancelled) {
           setModelOptions(nextOptions);
@@ -174,8 +182,9 @@ export default function App() {
             ? FALLBACK_MODEL_OPTIONS
             : [{ id: fallbackModel, label: fallbackModel }, ...FALLBACK_MODEL_OPTIONS];
           setModelOptions(fallbackOptions);
-          setSelectedModel(fallbackModel);
-          setModel(fallbackModel);
+          const nextSelectedModel = pickPreferredModel(fallbackOptions);
+          setSelectedModel(nextSelectedModel);
+          setModel(nextSelectedModel);
         }
       }
     };

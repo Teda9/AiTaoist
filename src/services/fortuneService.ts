@@ -5,10 +5,10 @@ import type { ToneMode } from "../types/toneMode";
 const defaultModel =
   process.env.OPENAI_DEFAULT_MODEL ||
   import.meta.env.VITE_OPENAI_DEFAULT_MODEL ||
-  "gpt-5.2";
+  "gpt-5.4";
 const HTML_RESPONSE_PATTERN = /<!doctype html|<html[\s>]|<head[\s>]|<body[\s>]/i;
 
-// Global model config defaults to gpt-5.2.
+// Global model config defaults to gpt-5.4.
 const Type = {
   OBJECT: "object",
   ARRAY: "array",
