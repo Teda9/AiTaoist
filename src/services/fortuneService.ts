@@ -1,6 +1,11 @@
 import { Solar } from "lunar-javascript";
 import { buildDailyShensha, buildDeterministicBazi } from "./shenshaRules";
 import type { ToneMode } from "../types/toneMode";
+import {
+  buildCompatibilityRelationshipPrompt,
+  DEFAULT_COMPATIBILITY_RELATIONSHIP,
+  type CompatibilityRelationship,
+} from "./compatibilityRelationship";
 
 const defaultModel =
   process.env.OPENAI_DEFAULT_MODEL ||
@@ -1612,6 +1617,7 @@ export async function calculateCompatibility(
   birthDate2: string,
   birthTime2: string,
   toneMode: ToneMode | boolean = "default",
+  relationship: CompatibilityRelationship = DEFAULT_COMPATIBILITY_RELATIONSHIP,
   options?: StreamRequestOptions
 ): Promise<CompatibilityResult> {
   const [year1, month1, day1] = birthDate1.split('-').map(Number);
@@ -1632,10 +1638,12 @@ export async function calculateCompatibility(
     : resolvedToneMode === "sweet"
       ? "请尽量多讲两人关系中的优势、默契、可修复空间与正向潜力；即使指出问题，也请以鼓励、温和、给人信心的方式表达。"
       : "请使用温和、客观、专业的语气进行分析。";
+  const relationshipPrompt = buildCompatibilityRelationshipPrompt(relationship);
 
   const prompt = `
-你是一个深耕中国传统命理的道士，精通八字合婚与情感分析。请根据以下两人的八字信息，进行详细的合盘推演。
+你是一个深耕中国传统命理的道士，精通八字关系合盘。请根据以下两人的八字信息，进行详细的合盘推演。
 ${harshPrompt}
+${relationshipPrompt}
 
 第一方（主测人）：
 性别：${gender1}
@@ -1648,14 +1656,14 @@ ${harshPrompt}
 准确八字：${exactBazi2}
 
 【核心推演法则】：
-1. **理论依据**：合盘推演必须以《渊海子平》《三命通会》中的合婚理论为基础，结合《滴天髓阐微》的五行气象进行综合评判。
+1. **理论依据**：合盘推演必须以《渊海子平》《三命通会》的生克合冲理论为基础，结合《滴天髓阐微》的五行气象进行综合评判；若关系类型为亲密关系，再重点参考合婚理论。
 2. **核心技法**：
    - 重点考察两人日柱干支的生克合化关系（如天合地合、天克地冲）。
    - 分析两人八字五行喜忌的互补性（如一方的旺神是否为另一方的用神）。
-   - 结合男女命局中的配偶星（男看财，女看官杀）与配偶宫（日支）的相互作用。
+   - 若为亲密关系，结合男女命局中的配偶星（男看财，女看官杀）与配偶宫（日支）的相互作用；若为友情或合作，不要强行套用婚恋断语。
    - 辅助参考神煞（如桃花、孤辰寡宿、天乙贵人等）对两人关系的影响。
-3. 给出两人的契合度总分（0-100分）。
-4. 详细分析两人的情感连接、相处模式、未来发展方向，并给出中肯的建议。每项分析不少于100字。
+3. 给出两人在当前关系类型下的匹配总分（0-100分）。
+4. 按当前关系类型详细分析两人的连接基础、相处/协作模式、未来发展方向，并给出中肯的建议。每项分析不少于100字。
 
 请严格按照要求的JSON格式返回测算结果。
 `;
@@ -1664,13 +1672,14 @@ ${harshPrompt}
 
 【补充推演要求】：
 1. 先分别判断双方命局特征，再看两人之间的生克、合冲、五行互补与配偶信息匹配，最后再下整体结论。
-2. 不得只看“合”或“冲”就草率定论，必须结合双方原局喜忌、日柱关系、配偶星与夫妻宫综合判断。
+2. 不得只看“合”或“冲”就草率定论，必须结合双方原局喜忌、日柱关系与当前关系类型综合判断。
 3. overallScore 必须与实际分析一致，不可出现文字偏凶但分数偏高，或文字偏合但分数过低的矛盾。
 4. emotionAnalysis、interactionPattern、futureDirection、suggestions 要分别承担不同作用，避免内容重复。
 5. 对风险要说明触发条件和主要矛盾点，对优势要说明为什么能互补。避免无依据的绝对化断语。
-6. 输出时不要把合盘过程写成逐步推演记录，而要写成总结性的关系判断，归纳两人的缘分性质、相处主线、易起波澜的阶段，以及未来较可能应验的大事方向。`;
+6. 输出时不要把合盘过程写成逐步推演记录，而要写成总结性的关系判断，归纳两人的缘分性质、相处主线、易起波澜的阶段，以及未来较可能应验的大事方向。
+7. 必须围绕“${relationshipPrompt}”来措辞，不要偏离用户选择的关系类型。`;
 
-  const refinedSystemInstruction = "你是一个深耕中国传统命理的道士，精通八字合婚。擅长分析两人的五行生克、干支合化，洞悉情感纠葛与相处之道。必须先分别看双方命局，再看彼此互动，再下契合度与关系走向结论，但这些步骤只作为内部推演顺序，不要在输出中逐步复述。判断要综合、克制、前后一致，避免只凭单一合冲下结论。最终以总结性论述呈现两人的关系主线、相合与相冲之处、关键阶段与未来较易应验的大事方向。";
+  const refinedSystemInstruction = "你是一个深耕中国传统命理的道士，精通八字关系合盘。擅长分析两人的五行生克、干支合化，并按亲密、友情或合作等不同关系类型判断相处之道。必须先分别看双方命局，再看彼此互动，再下契合度与关系走向结论，但这些步骤只作为内部推演顺序，不要在输出中逐步复述。判断要综合、克制、前后一致，避免只凭单一合冲下结论。最终以总结性论述呈现两人的关系主线、相合与相冲之处、关键阶段与未来较易应验的大事方向。";
 
   const response = await ai.models.generateContent({
     model: currentModel,
@@ -1681,7 +1690,7 @@ ${harshPrompt}
       onTextDelta: options?.onTextDelta,
       signal: options?.signal,
     }))({
-      systemInstruction: "你是一个深耕中国传统命理的道士，精通八字合婚。擅长分析两人的五行生克、干支合化，洞悉情感纠葛与相处之道。",
+      systemInstruction: "你是一个深耕中国传统命理的道士，精通八字关系合盘。擅长分析两人的五行生克、干支合化，洞悉关系中的相合相冲与相处之道。",
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.OBJECT,

@@ -4,10 +4,16 @@ import { CompatibilityResult as ICompatibilityResult } from '../services/fortune
 import { Heart, RefreshCw, Share2, Sparkles, Activity, Compass, Users, Wind } from 'lucide-react';
 import { shareAsImage } from '../utils/shareUtils';
 import type { ToneMode } from '../types/toneMode';
+import {
+  COMPATIBILITY_RESULT_TITLES,
+  DEFAULT_COMPATIBILITY_RELATIONSHIP,
+  getCompatibilityRelationshipLabel,
+  type CompatibilityRelationship,
+} from '../services/compatibilityRelationship';
 
 interface CompatibilityResultProps {
   result: ICompatibilityResult;
-  compatibilityInfo: { gender1: string; birthDate1: string; birthTime1: string; calendarType1?: string; isLeapMonth1?: boolean; gender2: string; birthDate2: string; birthTime2: string; calendarType2?: string; isLeapMonth2?: boolean; toneMode?: ToneMode; isHarshMode: boolean };
+  compatibilityInfo: { gender1: string; birthDate1: string; birthTime1: string; calendarType1?: string; isLeapMonth1?: boolean; gender2: string; birthDate2: string; birthTime2: string; calendarType2?: string; isLeapMonth2?: boolean; relationship?: CompatibilityRelationship; toneMode?: ToneMode; isHarshMode: boolean };
   onReset: () => void;
 }
 
@@ -15,6 +21,9 @@ export default function CompatibilityResult({ result, compatibilityInfo, onReset
   const SHARE_CARD_ID = 'compatibility-share-card';
   const resultRef = useRef<HTMLDivElement>(null);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const relationship = compatibilityInfo.relationship || DEFAULT_COMPATIBILITY_RELATIONSHIP;
+  const relationshipLabel = getCompatibilityRelationshipLabel(relationship);
+  const resultTitles = COMPATIBILITY_RESULT_TITLES[relationship];
 
   const handleShare = async () => {
     setIsGeneratingImage(true);
@@ -97,7 +106,7 @@ export default function CompatibilityResult({ result, compatibilityInfo, onReset
               <div className="absolute inset-2 border-2 border-dashed border-cinnabar/30 rounded-full animate-[spin_15s_linear_infinite_reverse]"></div>
               <div className="text-center">
                 <div className="text-4xl font-bold text-gold">{result.overallScore}</div>
-                <div className="text-xs text-gold/60 tracking-widest mt-1">契合度</div>
+                <div className="text-xs text-gold/60 tracking-widest mt-1">{resultTitles.scoreLabel}</div>
               </div>
             </motion.div>
 
@@ -116,15 +125,18 @@ export default function CompatibilityResult({ result, compatibilityInfo, onReset
               </div>
             </motion.div>
           </div>
+          <div className="text-center text-gold/70 text-sm tracking-[0.3em]">
+            关系类型 · {relationshipLabel}
+          </div>
         </div>
       </div>
 
       {/* 详细分析区 */}
       <div className="space-y-6">
-        <ResultSection icon={<Heart />} title="情感深层分析" content={result.emotionAnalysis} />
-        <ResultSection icon={<Users />} title="相处模式" content={result.interactionPattern} />
-        <ResultSection icon={<Compass />} title="未来方向" content={result.futureDirection} />
-        <ResultSection icon={<Wind />} title="改善建议" content={result.suggestions} />
+        <ResultSection icon={<Heart />} title={resultTitles.emotionAnalysis} content={result.emotionAnalysis} />
+        <ResultSection icon={<Users />} title={resultTitles.interactionPattern} content={result.interactionPattern} />
+        <ResultSection icon={<Compass />} title={resultTitles.futureDirection} content={result.futureDirection} />
+        <ResultSection icon={<Wind />} title={resultTitles.suggestions} content={result.suggestions} />
       </div>
 
       {/* 底部操作区 */}
@@ -140,7 +152,7 @@ export default function CompatibilityResult({ result, compatibilityInfo, onReset
         >
           <div className="rounded-[32px] border border-[#d5d0c4] bg-white shadow-[0_24px_80px_rgba(15,23,42,0.08)] overflow-hidden">
             <div className="bg-[#1f2937] text-[#f8f4ec] px-10 py-8">
-              <div className="text-xs tracking-[0.45em] text-[#d4af37] mb-3">八字合盘</div>
+              <div className="text-xs tracking-[0.45em] text-[#d4af37] mb-3">八字合盘 · {relationshipLabel}</div>
               <div className="grid grid-cols-[1fr_220px_1fr] gap-8 items-center">
                 <div className="space-y-3">
                   <div className="text-sm text-white/60 tracking-[0.28em]">主测八字</div>
@@ -150,7 +162,7 @@ export default function CompatibilityResult({ result, compatibilityInfo, onReset
                   </div>
                 </div>
                 <div className="rounded-[28px] border border-white/10 bg-white/5 px-6 py-7 text-center">
-                  <div className="text-xs tracking-[0.3em] text-[#d4af37] mb-2">契合度</div>
+                  <div className="text-xs tracking-[0.3em] text-[#d4af37] mb-2">{resultTitles.scoreLabel}</div>
                   <div className="text-5xl font-bold text-[#f4d58d]">{result.overallScore}</div>
                 </div>
                 <div className="space-y-3 text-right">
@@ -165,10 +177,10 @@ export default function CompatibilityResult({ result, compatibilityInfo, onReset
 
             <div className="px-10 py-8 grid grid-cols-2 gap-5">
               {[
-                { title: '情感深层分析', content: result.emotionAnalysis },
-                { title: '相处模式', content: result.interactionPattern },
-                { title: '未来方向', content: result.futureDirection },
-                { title: '改善建议', content: result.suggestions },
+                { title: resultTitles.emotionAnalysis, content: result.emotionAnalysis },
+                { title: resultTitles.interactionPattern, content: result.interactionPattern },
+                { title: resultTitles.futureDirection, content: result.futureDirection },
+                { title: resultTitles.suggestions, content: result.suggestions },
               ].map((section) => (
                 <div key={section.title} className="rounded-[24px] border border-[#e5ded1] bg-[#fbf8f3] p-6">
                   <div className="text-xs tracking-[0.3em] text-[#8a7358] mb-3">{section.title}</div>

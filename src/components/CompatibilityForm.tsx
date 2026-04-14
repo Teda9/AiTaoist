@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Heart, User, Calendar, Clock, Sparkles } from 'lucide-react';
+import { Heart, User, Calendar, Clock, Sparkles, Users } from 'lucide-react';
 import { Lunar, LunarYear, Solar } from 'lunar-javascript';
 import type { ToneMode } from '../types/toneMode';
+import {
+  COMPATIBILITY_RELATIONSHIP_OPTIONS,
+  DEFAULT_COMPATIBILITY_RELATIONSHIP,
+  type CompatibilityRelationship,
+} from '../services/compatibilityRelationship';
 
 interface CompatibilityFormProps {
   onSubmit: (data: {
@@ -16,6 +21,7 @@ interface CompatibilityFormProps {
     birthTime2: string;
     calendarType2: string;
     isLeapMonth2: boolean;
+    relationship: CompatibilityRelationship;
     toneMode: ToneMode;
     isHarshMode: boolean;
   }) => void;
@@ -48,6 +54,7 @@ export default function CompatibilityForm({ onSubmit, isLoading }: Compatibility
   const [daysInMonth2, setDaysInMonth2] = useState(31);
   const [correspondingDate1, setCorrespondingDate1] = useState('');
   const [correspondingDate2, setCorrespondingDate2] = useState('');
+  const [relationship, setRelationship] = useState<CompatibilityRelationship>(DEFAULT_COMPATIBILITY_RELATIONSHIP);
   
   const [toneMode, setToneMode] = useState<ToneMode>('default');
   const isHarshMode = toneMode === 'harsh';
@@ -216,7 +223,7 @@ export default function CompatibilityForm({ onSubmit, isLoading }: Compatibility
       finalBirthDate2 = `${year2}-${month2.padStart(2, '0')}-${day2.padStart(2, '0')}`;
     }
     
-    onSubmit({ gender1, birthDate1: finalBirthDate1, birthTime1, calendarType1, isLeapMonth1, gender2, birthDate2: finalBirthDate2, birthTime2, calendarType2, isLeapMonth2, toneMode, isHarshMode });
+    onSubmit({ gender1, birthDate1: finalBirthDate1, birthTime1, calendarType1, isLeapMonth1, gender2, birthDate2: finalBirthDate2, birthTime2, calendarType2, isLeapMonth2, relationship, toneMode, isHarshMode });
   };
 
   return (
@@ -485,6 +492,40 @@ export default function CompatibilityForm({ onSubmit, isLoading }: Compatibility
                 />
               </div>
             </div>
+          </div>
+        </div>
+
+        <div className="space-y-3 px-2 pt-2">
+          <label className={`flex items-center gap-2 text-sm font-bold tracking-widest transition-colors duration-500 ${isHarshMode ? 'text-red-200' : isSweetMode ? 'text-rose-700' : 'text-ink/60'}`}>
+            <Users className="w-4 h-4" /> 关系类型
+          </label>
+          <div className={`p-1.5 rounded-2xl grid grid-cols-3 gap-1 transition-colors duration-500 ${isHarshMode ? 'bg-black/30' : isSweetMode ? 'bg-rose-100/70' : 'bg-black/5'}`}>
+            {COMPATIBILITY_RELATIONSHIP_OPTIONS.map((option) => {
+              const active = relationship === option.id;
+
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => setRelationship(option.id)}
+                  className={`rounded-xl px-3 py-2 text-sm font-bold tracking-wide transition-colors ${
+                    active
+                      ? isHarshMode
+                        ? 'bg-red-500 text-red-950'
+                        : isSweetMode
+                          ? 'bg-rose-100 text-rose-700'
+                          : 'bg-white text-ink'
+                      : isHarshMode
+                        ? 'text-red-200/50 hover:text-red-200'
+                        : isSweetMode
+                          ? 'text-rose-500/70 hover:text-rose-700'
+                          : 'text-ink/50 hover:text-ink'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
           </div>
         </div>
 

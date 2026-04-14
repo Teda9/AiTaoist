@@ -28,6 +28,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { HelpCircle, Cpu } from 'lucide-react';
 import type { ToneMode } from './types/toneMode';
+import type { CompatibilityRelationship } from './services/compatibilityRelationship';
 
 type Tab = 'bazi' | 'compatibility' | 'luren' | 'xiaoluren' | 'liuyao';
 
@@ -122,7 +123,7 @@ export default function App() {
   const [compatibilityLoading, setCompatibilityLoading] = useState(false);
   const [compatibilityResult, setCompatibilityResult] = useState<ICompatibilityResult | null>(null);
   const [compatibilityError, setCompatibilityError] = useState<string | null>(null);
-  const [compatibilityInfo, setCompatibilityInfo] = useState<{ gender1: string; birthDate1: string; birthTime1: string; calendarType1?: string; isLeapMonth1?: boolean; gender2: string; birthDate2: string; birthTime2: string; calendarType2?: string; isLeapMonth2?: boolean; toneMode: ToneMode; isHarshMode: boolean } | null>(null);
+  const [compatibilityInfo, setCompatibilityInfo] = useState<{ gender1: string; birthDate1: string; birthTime1: string; calendarType1?: string; isLeapMonth1?: boolean; gender2: string; birthDate2: string; birthTime2: string; calendarType2?: string; isLeapMonth2?: boolean; relationship: CompatibilityRelationship; toneMode: ToneMode; isHarshMode: boolean } | null>(null);
 
   // LuRen State
   const [lurenLoading, setLurenLoading] = useState(false);
@@ -198,7 +199,8 @@ export default function App() {
 
   useEffect(() => {
     return () => {
-      Object.values(requestControllersRef.current).forEach((controller) => controller?.abort());
+      const controllers = Object.values(requestControllersRef.current) as AbortController[];
+      controllers.forEach((controller) => controller.abort());
     };
   }, []);
 
@@ -251,14 +253,14 @@ export default function App() {
     }
   };
 
-  const handleCompatibilityCalculate = async (data: { gender1: string; birthDate1: string; birthTime1: string; calendarType1: string; isLeapMonth1: boolean; gender2: string; birthDate2: string; birthTime2: string; calendarType2: string; isLeapMonth2: boolean; toneMode: ToneMode; isHarshMode: boolean }) => {
+  const handleCompatibilityCalculate = async (data: { gender1: string; birthDate1: string; birthTime1: string; calendarType1: string; isLeapMonth1: boolean; gender2: string; birthDate2: string; birthTime2: string; calendarType2: string; isLeapMonth2: boolean; relationship: CompatibilityRelationship; toneMode: ToneMode; isHarshMode: boolean }) => {
     const controller = beginStreamRequest('compatibility');
     setCompatibilityLoading(true);
     setCompatibilityError(null);
     updateStreamingText('compatibility', '');
     setCompatibilityInfo(data);
     try {
-      const res = await calculateCompatibility(data.gender1, data.birthDate1, data.birthTime1, data.gender2, data.birthDate2, data.birthTime2, data.toneMode, {
+      const res = await calculateCompatibility(data.gender1, data.birthDate1, data.birthTime1, data.gender2, data.birthDate2, data.birthTime2, data.toneMode, data.relationship, {
         onTextDelta: (text) => updateStreamingText('compatibility', text),
         signal: controller.signal,
       });
